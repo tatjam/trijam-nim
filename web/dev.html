@@ -1,0 +1,18 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>game</title>
+<style>body{margin:0;background:#000;display:grid;place-items:center;height:100vh}</style>
+<canvas id="c"></canvas>
+<script src="loop.js"></script>
+<script>
+  // dev only: remove before shipping
+  let seen;
+  setInterval(async () => {
+    try {
+      const r = await fetch("loop.js", { method: "HEAD", cache: "no-store" });
+      const m = r.headers.get("last-modified");
+      if (seen && m !== seen) location.reload();
+      seen = m;
+    } catch (_) {}
+  }, 500);
+</script>
