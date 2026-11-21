@@ -2,12 +2,50 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import framework/[scene, canvas, audio, sprite, vec], state, assets, config, scenes
+import std/rand
 
 var res: Assets = nil
 
 type CrowdMan = object
   variant: int
+  pos*: V2
+  baseDir: float
+  baseSpeed: float
+  glanceT: float
+  glanced: bool
+  nearTrigger: float
+
+  animT: float
+
   doing: CrowdBehaviour
+
+proc update(man: var CrowdMan, dt: float, playerX: float) =
+  let dx = man.pos.x - playerX
+  let toward = if dx > 0: 1.0 else: -1.0
+
+  man.animT += dt * 2.0 * man.baseSpeed
+  if man.glanceT > 0.0:
+    man.glanceT -= dt * man.baseSpeed
+
+  var vx = 0.0
+
+  case man.doing
+  of cbWarmToward, cbUniformToward:
+    let speed = if man.doing == cbWarmToward: 40.0 else: 28.0
+    if abs(dx) > 24:
+      vx = toward * speed
+    else:
+      man.glanceT = 9999.0
+  of cbGlance:
+    vx = man.baseDir * 30.0
+    if not man.glanced and abs(dx) < man.nearTrigger:
+      man.glanceT = 1.0
+      man.glanced = true
+  of cbIgnore:
+    vx = man.baseDir * 18.0
+
+proc draw(man: CrowdMan, playerX: float) =
+  discard
 
 type TurnScene* = ref object of Scene
   state*: GameState
@@ -16,6 +54,7 @@ type TurnScene* = ref object of Scene
   fade: float
 
   crowd: seq[CrowdMan]
+  rng: Rand
 
 method enter*(s: TurnScene) =
   res = loadAssets()
@@ -23,6 +62,7 @@ method enter*(s: TurnScene) =
 
   # Build the crowd
   let emit = s.state.getEmit()
+  for man in 
 
 method update*(s: TurnScene, dt: float, ctx: Context) =
   if loadImageProgress() != 1.0:
