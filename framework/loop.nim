@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import std/dom
-import canvas, context, keyboard, mouse, scene, audio, src/[config]
+import canvas, context, keyboard, mouse, scene, audio, src/[init, config]
 
 var
   c = initCanvas("c", W, H)
@@ -33,7 +33,7 @@ window.addEventListener(
 )
 
 cElem.addEventListener(
-  "mouseMove",
+  "mousemove",
   proc(e: Event) =
     let mev = MouseEvent(e)
     ctx.mous.move(mev.offsetX, mev.offsetY)
@@ -77,7 +77,7 @@ proc frame(ms: float) =
 
   requestFrame(frame)
 
-nextScene config.startScene
+nextScene init.startScene
 changeSceneIfNeeded()
 c.smoothing false
 requestFrame(frame)

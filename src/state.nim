@@ -13,6 +13,9 @@ type Action* = enum
   aIntegrate
   aIsolate
 
+const actionName*: array[Action, string] =
+  [aShine: "Shine", aIntegrate: "Integrate", aIsolate: "Isolate"]
+
 type MoonPhase* = enum
   mpFull
   mpWaning
