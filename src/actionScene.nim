@@ -1,7 +1,7 @@
 # Copyright (C) 2026 tatjam
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import framework/[scene, canvas, mouse, audio, text], state, config, turnScene
+import framework/[scene, canvas, mouse, audio, text], state, config, scenes
 import std/options
 
 type Button = object
@@ -33,7 +33,7 @@ method update*(s: ActionScene, dt: float, ctx: Context) =
     s.fade = some(s.fade.get + dt)
 
     if s.fade.get > 1.0:
-      nextScene TurnScene(state: s.state)
+      goToScene sidTurn
   else:
     # Chooser GUI
     var anyHover = false
