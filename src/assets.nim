@@ -3,12 +3,26 @@
 
 import framework/[sprite]
 
+const names = ["hat-man", "bearded", "woman", "oldman"]
+
 type Assets* = ref object
   background*: Sheet
+  middleground*: Sheet
+  lamp*: Sheet
+  crowdIdle*: array[names.len, Sheet]
+  crowdWalk*: array[names.len, Sheet]
   moon*: Sheet
 
 proc loadAssets*(): Assets =
-  return Assets(
+  result = Assets(
     background: Sheet(img: loadImage("res/background.png"), fw: 384, fh: 288),
+    middleground: Sheet(img: loadImage("res/middleground.png"), fw: 650, fh: 350),
+    lamp: Sheet(img: loadImage("res/street-lamp.png"), fw: 35, fh: 108),
     moon: Sheet(img: loadImage("res/moon.png"), fw: 55, fh: 55),
   )
+
+  for i, name in names:
+    result.crowdIdle[i] =
+      Sheet(img: loadImage(cstring("res/" & name & "-idle.png")), fw: 39, fh: 52)
+    result.crowdWalk[i] =
+      Sheet(img: loadImage(cstring("res/" & name & "-walk.png")), fw: 39, fh: 52)

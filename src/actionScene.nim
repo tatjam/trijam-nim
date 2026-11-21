@@ -32,6 +32,8 @@ method update*(s: ActionScene, dt: float, ctx: Context) =
   if isSome s.fade:
     s.fade = some(s.fade.get + dt)
 
+    s.state.playTurn(get s.hover)
+
     if s.fade.get > 1.0:
       goToScene sidTurn
   else:

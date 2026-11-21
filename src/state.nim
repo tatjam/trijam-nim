@@ -27,7 +27,7 @@ type SocialStanding* = enum
   ssAssumed
   ssForgotten
 
-type CrowdBehaviour = enum
+type CrowdBehaviour* = enum
   cbWarmToward
   cbUniformToward
   cbGlance
@@ -130,5 +130,5 @@ proc playTurn*(state: GameState, a: Action) =
 proc getEmit*(state: GameState): array[CrowdBehaviour, float] =
   return emit[state.socialStanding]
 
-proc finishTurn*(state: GameState, a: Action) =
+proc finishTurn*(state: GameState) =
   state.moonPhase = nextPhase[state.moonPhase]
