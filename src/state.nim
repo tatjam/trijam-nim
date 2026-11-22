@@ -36,18 +36,18 @@ type CrowdBehaviour* = enum
 const noticeability: array[MoonPhase, float] =
   [mpFull: 0.3, mpWaning: 0.6, mpNew: 1.0, mpWaxing: 0.6]
 
-const payoff: array[Action, array[SocialStanding, float]] = [
-  aShine: [ssPraised: 3.0, ssAssumed: -2.0, ssForgotten: 0.0],
-  aIntegrate: [ssPraised: 1.0, ssAssumed: 2.0, ssForgotten: -1.0],
-  aIsolate: [ssPraised: -1.0, ssAssumed: 0.0, ssForgotten: 1.0],
+const payoff*: array[Action, array[SocialStanding, float]] = [
+  aShine: [ssPraised: 5.5, ssAssumed: -3.0, ssForgotten: -4.5],
+  aIntegrate: [ssPraised: 0.5, ssAssumed: 2.5, ssForgotten: -1.0],
+  aIsolate: [ssPraised: -2.50, ssAssumed: -0.5, ssForgotten: 0.25],
 ]
 
 # Emit as in the hidden markov chain meaning
 const emit: array[SocialStanding, array[CrowdBehaviour, float]] = [
   ssPraised: [cbWarmToward: 0.6, cbUniformToward: 0.2, cbGlance: 0.15, cbIgnore: 0.05],
-  ssAssumed: [cbWarmToward: 0.15, cbUniformToward: 0.6, cbGlance: 0.2, cbIgnore: 0.05],
+  ssAssumed: [cbWarmToward: 0.05, cbUniformToward: 0.2, cbGlance: 1.0, cbIgnore: 0.05],
   ssForgotten:
-    [cbWarmToward: 0.05, cbUniformToward: 0.15, cbGlance: 0.55, cbIgnore: 0.25],
+    [cbWarmToward: 0.05, cbUniformToward: 0.15, cbGlance: 0.55, cbIgnore: 0.55],
 ]
 
 const nextPhase = array[MoonPhase, MoonPhase](
@@ -56,8 +56,8 @@ const nextPhase = array[MoonPhase, MoonPhase](
 
 type GameState* = ref object
   night* = 1
-  lastNight* = 10
-  shine* = 0.8
+  lastNight* = 12
+  shine* = 1.0
   score* = 0.0
   tally*: array[Cause, float] = [0.0, 0.0, 0.0]
 
@@ -65,6 +65,7 @@ type GameState* = ref object
   moonPhase*: MoonPhase = mpWaxing
   rng*: Rand = initRand(1234)
   lastAction*: Option[Action] = none(Action)
+  lastStanding*: Option[SocialStanding] = none(SocialStanding)
 
 proc effectOnShine(state: GameState, a: Action, n: float) =
   var lose: array[Cause, float]
@@ -72,20 +73,28 @@ proc effectOnShine(state: GameState, a: Action, n: float) =
 
   case a
   of aShine:
-    gain = 0.06
-    lose[cMoon] = 0.1 * n
+    if state.socialStanding == ssPraised:
+      gain = 0.3
+    else:
+      gain = 0.04
+    lose[cMoon] = 0.14 * n
     lose[cCrowd] = (
       case state.socialStanding
-      of ssPraised: 0.05
-      of ssAssumed: 0.12
-      of ssForgotten: 0.06
+      of ssPraised: 0.08
+      of ssAssumed: 0.18
+      of ssForgotten: 0.12
     )
+    lose[cSelf] = 0.04
   of aIntegrate:
-    lose[cMoon] = 0.05 * n
-    lose[cSelf] = 0.15
+    if state.socialStanding == ssAssumed:
+      gain = 0.05
+    lose[cMoon] = 0.06 * n
+    lose[cSelf] = 0.11
+    lose[cCrowd] = 0.04
   of aIsolate:
-    gain = 0.08
-    lose[cSelf] = 0.03
+    gain = 0.22
+    lose[cSelf] = 0.05
+    lose[cCrowd] = 0.02
 
   var totalLose = 0.0
   for c in Cause:
@@ -98,9 +107,9 @@ proc effectOnShine(state: GameState, a: Action, n: float) =
     state.shine = min(state.shine, max(before, 0.6))
 
 const transitionTable: array[SocialStanding, array[SocialStanding, float]] = [
-  ssPraised: [ssPraised: 0.7, ssAssumed: 0.25, ssForgotten: 0.05],
-  ssAssumed: [ssPraised: 0.05, ssAssumed: 0.7, ssForgotten: 0.25],
-  ssForgotten: [ssPraised: 0.25, ssAssumed: 0.05, ssForgotten: 0.7],
+  ssPraised: [ssPraised: 0.45, ssAssumed: 0.45, ssForgotten: 0.1],
+  ssAssumed: [ssPraised: 0.15, ssAssumed: 0.55, ssForgotten: 0.35],
+  ssForgotten: [ssPraised: 0.02, ssAssumed: 0.23, ssForgotten: 0.75],
 ]
 
 const pushTo: array[Action, SocialStanding] =
@@ -127,14 +136,27 @@ proc effectOnSocialStanding(state: GameState, a: Action, n: float) =
 
 proc playTurn*(state: GameState, a: Action) =
   let n = noticeability[state.moonPhase]
+  state.lastStanding = some(state.socialStanding)
   state.score += payoff[a][state.socialStanding] * n
   effectOnShine(state, a, n)
   effectOnSocialStanding(state, a, n)
   state.lastAction = some(a)
 
 proc getEmit*(state: GameState): array[CrowdBehaviour, float] =
-  return emit[state.socialStanding]
+  return emit[get state.lastStanding]
 
 proc finishTurn*(state: GameState) =
   state.moonPhase = nextPhase[state.moonPhase]
   state.night += 1
+
+proc reset*(state: GameState) =
+  state.night = 1
+  state.shine = 1.0
+  state.score = 0.0
+  state.tally = [0.0, 0.0, 0.0]
+
+  state.socialStanding = ssAssumed
+  state.moonPhase = mpWaxing
+  state.rng = initRand(state.rng.rand(100000))
+  state.lastAction = none(Action)
+  state.lastStanding = none(SocialStanding)

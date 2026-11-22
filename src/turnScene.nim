@@ -62,6 +62,8 @@ proc draw(man: CrowdMan, c: Canvas, assets: Assets, playerX: float) =
 
   c.drawFrame(asset, frame, man.pos.x, man.pos.y, 2.0, man.baseDir < 0.0)
 
+  c.fillStyle("#ffffff")
+
 type TurnScene* = ref object of Scene
   state*: GameState
   assets*: Assets
@@ -75,6 +77,7 @@ type TurnScene* = ref object of Scene
   playerX: float
 
   prog: float
+  playedOutcome: bool
 
   drawPlayerPos: V2
   drawPlayer: Sheet
@@ -89,7 +92,7 @@ method enter*(s: TurnScene) =
 
   # Build the crowd
   let emit = s.state.getEmit()
-  let numMen = s.rng.rand(5) + 3
+  let numMen = s.rng.rand(5) + 5
 
   s.crowd.setLen(0)
 
@@ -116,6 +119,7 @@ method enter*(s: TurnScene) =
   if isNone s.state.lastAction:
     echo "Unexpected, lastAction is none, assuming aShine"
     s.state.lastAction = some(aShine)
+    s.state.lastStanding = some(ssAssumed)
 
   case get s.state.lastAction
   of aShine:
@@ -174,9 +178,23 @@ method update*(s: TurnScene, dt: float, ctx: Context) =
   s.gatePhase += dt
   s.playerPhase += dt * 12.0
 
+  if s.prog > 1.0 and not s.playedOutcome:
+    let v = payoff[get s.state.lastAction][get s.state.lastStanding]
+    const base = 330.0
+    if abs(v) < 0.05:
+      beep(base, 0.80, 0.15, 0.0, wSine)
+    else:
+      let semis = 4.0 + 3.0 * abs(v)
+      let far = base * pow(2.0, semis / 12.0)
+      if v > 0:
+        beep(base, 1.0, 0.30, far, wTri)
+      else:
+        beep(far, 1.0, 0.20, base, wSaw)
+    s.playedOutcome = true
+
   if s.prog > 1.2:
     s.state.finishTurn()
-    if s.state.shine < 0:
+    if s.state.shine <= 0:
       goToScene sidEnding
     elif s.state.night >= s.state.lastNight:
       goToScene sidEnding
@@ -185,19 +203,21 @@ method update*(s: TurnScene, dt: float, ctx: Context) =
 
 const outcomeText: array[Action, array[SocialStanding, string]] = [
   aShine: [
-    ssPraised:   "",
-    ssAssumed:   "",
-    ssForgotten: ""],
+    ssPraised: "How public, like a Frog, to tell your name to an admiring Bog!",
+    ssAssumed: "How dreary to be Somebody!",
+    ssForgotten: "The Soul selects her own Society, then shuts the door.",
+  ],
   aIntegrate: [
-    ssPraised:   "",
-    ssAssumed:   "",
-    ssForgotten: ""],
+    ssPraised: "Then there's a pair of us! Don't tell, they'd banish us, you know!",
+    ssAssumed: "I'm Nobody! Who are you? Are you Nobody too?",
+    ssForgotten: "To tell your name, the livelong June.",
+  ],
   aIsolate: [
-    ssPraised:   "",
-    ssAssumed:   "",
-    ssForgotten: ""],
+    ssPraised: "Unmoved she notes the Chariots, pausing at her low gate.",
+    ssAssumed: "To her divine Majority, presents no more.",
+    ssForgotten: "Choose one, then close the Valves of her attention, like Stone.",
+  ],
 ]
-
 
 method draw*(s: TurnScene, c: Canvas) =
   if loadImageProgress() != 1.0:
@@ -209,13 +229,14 @@ method draw*(s: TurnScene, c: Canvas) =
 
   case s.state.moonPhase
   of mpNew:
-    c.fillStyle("#063540")
+    c.fillStyle("#01080e") # near-black, ominous — highest danger (notice 1.0)
   of mpWaxing:
-    c.fillStyle("#094d5d")
-  of mpWaning:
-    c.fillStyle("#094d5d")
+    c.fillStyle("#0a3d4f") # mid, cooler, slight green lift (notice 0.6)
   of mpFull:
-    c.fillStyle("#035062")
+    c.fillStyle("#145f70")
+      # brightest sky — the full moon lights the scene (notice 0.3)
+  of mpWaning:
+    c.fillStyle("#0b2f45") # mid-dark, bluer — fading toward new (notice 0.6)
 
   c.fillRect(0, 0, Wf, Hf)
   c.alpha(1.0)
@@ -241,5 +262,5 @@ method draw*(s: TurnScene, c: Canvas) =
   c.alpha(1.0)
 
   if s.prog >= 1:
-    let text = 
-    c.drawText("Hi", Wf / 2, Hf / 2, aCenter, "#fff")
+    let text = outcomeText[get s.state.lastAction][get s.state.lastStanding]
+    c.drawText(text, Wf / 2, Hf / 2, aCenter, "#fff")

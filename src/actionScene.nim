@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import framework/[scene, canvas, mouse, audio, text], state, config, scenes
-import std/options
+import std/[options, strformat]
 
 type Button = object
   x, y, w, h: float
@@ -32,9 +32,8 @@ method update*(s: ActionScene, dt: float, ctx: Context) =
   if isSome s.fade:
     s.fade = some(s.fade.get + dt)
 
-    s.state.playTurn(get s.hover)
-
     if s.fade.get > 1.0:
+      s.state.playTurn(get s.hover)
       goToScene sidTurn
   else:
     # Chooser GUI
@@ -76,8 +75,16 @@ method draw*(s: ActionScene, c: Canvas) =
     36,
     false,
   )
+
   if isSome s.fade:
     c.fillStyle("#000")
     c.alpha(s.fade.get)
     c.fillRect(0, 0, Wf, Hf)
     c.alpha(1.0)
+  else:
+    c.drawText(
+      &"Score: {s.state.score * 100:.0f}", Wf / 2, 200, aCenter, "#000", 36, false
+    )
+    c.drawText(
+      &"Shine: {s.state.shine * 100:.0f}", Wf / 2, 150, aCenter, "#000", 36, false
+    )

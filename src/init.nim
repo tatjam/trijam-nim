@@ -21,4 +21,5 @@ register(
 )
 
 var startScene* = ActionScene(state: gameState)
+# var startScene* = EndingScene(state: gameState)
 # var startScene* = TurnScene(state: gameState, assets: res)
