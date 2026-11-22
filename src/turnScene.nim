@@ -1,7 +1,8 @@
 # Copyright (C) 2026 tatjam
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import framework/[scene, canvas, audio, sprite, vec], state, assets, config, scenes
+import
+  framework/[scene, canvas, audio, sprite, vec, text], state, assets, config, scenes
 import std/[random, math, options]
 
 var res: Assets = nil
@@ -34,15 +35,18 @@ proc update(man: var CrowdMan, dt: float, playerX: float) =
     let speed = if man.doing == cbWarmToward: 40.0 else: 32.0
     if abs(dx) > man.nearTrigger:
       vx = toward * speed * man.baseSpeed
-    else:
+    elif not man.glanced:
       man.glanceT = 9999.0
+      man.glanced = true
+      beep(1000.0, 2.0, 0.4, 1500.0, wSine)
   of cbGlance:
-    vx = man.baseDir * 30.0 * man.baseSpeed
+    vx = man.baseDir * 35.0 * man.baseSpeed
     if not man.glanced and abs(dx) < man.nearTrigger:
+      beep(500.0, 2.0, 0.4, 100.0, wSine)
       man.glanceT = 10.0
       man.glanced = true
   of cbIgnore:
-    vx = man.baseDir * 18.0 * man.baseSpeed
+    vx = man.baseDir * 38.0 * man.baseSpeed
 
   if man.glanceT <= 0.0:
     man.pos.x += vx * dt
@@ -70,9 +74,13 @@ type TurnScene* = ref object of Scene
   rng: Rand
   playerX: float
 
+  prog: float
+
   drawPlayerPos: V2
   drawPlayer: Sheet
   playerIntensity: float
+  gatePhase: float
+  playerPhase: float
 
 method enter*(s: TurnScene) =
   s.time = 0.0
@@ -115,38 +123,81 @@ method enter*(s: TurnScene) =
     s.drawPlayerPos = V2(x: 123 * 2, y: 118 * 2)
     s.drawPlayer = s.assets.litChurch
   of aIntegrate:
-    s.playerX = 824
+    s.playerX = 390 * 2
     s.drawPlayerPos = V2(x: 402 * 2, y: 216 * 2)
     s.drawPlayer = s.assets.lamp
   of aIsolate:
-    s.playerX = 1104
+    s.playerX = 452 * 2
     s.drawPlayerPos = V2(x: 505 * 2, y: 176 * 2)
     s.drawPlayer = s.assets.litHouse
+
+proc smoothstep(e0, e1, x: float): float =
+  let t = clamp((x - e0) / (e1 - e0), 0.0, 1.0)
+  t * t * (3.0 - 2.0 * t)
 
 method update*(s: TurnScene, dt: float, ctx: Context) =
   if loadImageProgress() != 1.0:
     return
 
+  var dt = dt * 2
+
   const moonStart = V2(x: Wf, y: Hf - 300)
   const moonEnd = V2(x: 0.0, y: 0.0)
   s.time += dt
-  let prog = s.time / 20.0
+  s.prog = s.time / 20.0
 
-  s.moonPos = moonStart * (1.0 - prog) + moonEnd * prog
+  s.moonPos = moonStart * (1.0 - s.prog) + moonEnd * s.prog
 
-  if prog > 0.95:
-    s.fade = (prog - 0.95) / 0.05
+  if s.prog > 0.95:
+    s.fade = min((s.prog - 0.95) / 0.05, 1.0)
   else:
     s.fade = 0.0
 
   for man in s.crowd.mitems:
     man.update(dt, s.playerX)
 
-  s.playerIntensity = 1.0
+  let darken = clamp(1.0 - s.state.shine / 0.8, 0.0, 1.0)
+  let g = s.gatePhase
+  let gate = (sin(g * 0.9) + sin(g * 1.7 + 2.0) + sin(g * 2.9 + 0.7)) / 3.0
+  let thr = 0.8 - 1.6 * darken
 
-  if prog > 1.0:
+  let burst = smoothstep(thr, thr + 0.3, gate)
+
+  let p = s.playerPhase
+  let wobble = (sin(p) + sin(p * 2.31 + 1.7) + sin(p * 5.77 + 0.3)) / 3.0
+  let flicker01 = wobble * 0.5 + 0.5
+
+  let baseDim = 0.25 * darken
+  let amp = 0.6 * darken * burst
+  s.playerIntensity = clamp(1.0 - baseDim - amp * flicker01, 0.0, 1.0)
+
+  s.gatePhase += dt
+  s.playerPhase += dt * 12.0
+
+  if s.prog > 1.2:
     s.state.finishTurn()
-    goToScene sidAction
+    if s.state.shine < 0:
+      goToScene sidEnding
+    elif s.state.night >= s.state.lastNight:
+      goToScene sidEnding
+    else:
+      goToScene sidAction
+
+const outcomeText: array[Action, array[SocialStanding, string]] = [
+  aShine: [
+    ssPraised:   "",
+    ssAssumed:   "",
+    ssForgotten: ""],
+  aIntegrate: [
+    ssPraised:   "",
+    ssAssumed:   "",
+    ssForgotten: ""],
+  aIsolate: [
+    ssPraised:   "",
+    ssAssumed:   "",
+    ssForgotten: ""],
+]
+
 
 method draw*(s: TurnScene, c: Canvas) =
   if loadImageProgress() != 1.0:
@@ -177,7 +228,9 @@ method draw*(s: TurnScene, c: Canvas) =
 
   c.drawFrame(s.assets.middleground, 0, 0.0, 0.0, 2.0)
 
+  c.alpha(s.playerIntensity)
   c.drawFrame(s.drawPlayer, 0, s.drawPlayerPos.x, s.drawPlayerPos.y, 2.0)
+  c.alpha(1.0)
 
   for man in s.crowd.mitems:
     man.draw(c, s.assets, s.playerX)
@@ -186,3 +239,7 @@ method draw*(s: TurnScene, c: Canvas) =
   c.alpha(s.fade)
   c.fillRect(0, 0, Wf, Hf)
   c.alpha(1.0)
+
+  if s.prog >= 1:
+    let text = 
+    c.drawText("Hi", Wf / 2, Hf / 2, aCenter, "#fff")

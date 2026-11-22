@@ -1,4 +1,4 @@
-import state, scenes, state, actionScene, turnScene, assets
+import state, scenes, state, actionScene, turnScene, endingScene, endingScene, assets
 import framework/scene
 
 let gameState = GameState()
@@ -14,6 +14,11 @@ register(
   proc(): Scene =
     TurnScene(state: gameState, assets: res),
 )
+register(
+  sidEnding,
+  proc(): Scene =
+    EndingScene(state: gameState),
+)
 
-# var startScene* = ActionScene(state: gameState)
-var startScene* = TurnScene(state: gameState, assets: res)
+var startScene* = ActionScene(state: gameState)
+# var startScene* = TurnScene(state: gameState, assets: res)

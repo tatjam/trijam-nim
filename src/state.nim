@@ -34,7 +34,7 @@ type CrowdBehaviour* = enum
   cbIgnore
 
 const noticeability: array[MoonPhase, float] =
-  [mpFull: 0.3, mpWaning: 0.5, mpNew: 0.5, mpWaxing: 1.0]
+  [mpFull: 0.3, mpWaning: 0.6, mpNew: 1.0, mpWaxing: 0.6]
 
 const payoff: array[Action, array[SocialStanding, float]] = [
   aShine: [ssPraised: 3.0, ssAssumed: -2.0, ssForgotten: 0.0],
@@ -55,6 +55,8 @@ const nextPhase = array[MoonPhase, MoonPhase](
 )
 
 type GameState* = ref object
+  night* = 1
+  lastNight* = 10
   shine* = 0.8
   score* = 0.0
   tally*: array[Cause, float] = [0.0, 0.0, 0.0]
@@ -70,11 +72,11 @@ proc effectOnShine(state: GameState, a: Action, n: float) =
 
   case a
   of aShine:
-    gain = 0.10
+    gain = 0.06
     lose[cMoon] = 0.1 * n
     lose[cCrowd] = (
       case state.socialStanding
-      of ssPraised: 0.01
+      of ssPraised: 0.05
       of ssAssumed: 0.12
       of ssForgotten: 0.06
     )
@@ -90,9 +92,10 @@ proc effectOnShine(state: GameState, a: Action, n: float) =
     totalLose += lose[c]
     state.tally[c] += lose[c]
 
+  let before = state.shine
   state.shine = clamp(state.shine + gain - totalLose, 0.0, 1.0)
   if a == aIsolate:
-    state.shine = min(state.shine, 0.6)
+    state.shine = min(state.shine, max(before, 0.6))
 
 const transitionTable: array[SocialStanding, array[SocialStanding, float]] = [
   ssPraised: [ssPraised: 0.7, ssAssumed: 0.25, ssForgotten: 0.05],
@@ -134,3 +137,4 @@ proc getEmit*(state: GameState): array[CrowdBehaviour, float] =
 
 proc finishTurn*(state: GameState) =
   state.moonPhase = nextPhase[state.moonPhase]
+  state.night += 1

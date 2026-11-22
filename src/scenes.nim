@@ -6,6 +6,7 @@ import framework/scene
 type SceneId* = enum
   sidAction
   sidTurn
+  sidEnding
 
 var factories: array[SceneId, proc(): Scene]
 

@@ -67,6 +67,15 @@ method draw*(s: ActionScene, c: Canvas) =
       actionName[act], btn.x + btn.w / 2, btn.y + btn.h / 2, aCenter, "#fff", 36
     )
 
+  c.drawText(
+    "Night " & $s.state.night & "/" & $s.state.lastNight,
+    Wf / 2,
+    100,
+    aCenter,
+    "#000",
+    36,
+    false,
+  )
   if isSome s.fade:
     c.fillStyle("#000")
     c.alpha(s.fade.get)
