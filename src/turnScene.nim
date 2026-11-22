@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import framework/[scene, canvas, audio, sprite, vec], state, assets, config, scenes
-import std/[random, math]
+import std/[random, math, options]
 
 var res: Assets = nil
 
@@ -70,6 +70,10 @@ type TurnScene* = ref object of Scene
   rng: Rand
   playerX: float
 
+  drawPlayerPos: V2
+  drawPlayer: Sheet
+  playerIntensity: float
+
 method enter*(s: TurnScene) =
   s.time = 0.0
   s.rng = initRand(s.state.rng.rand(9999999))
@@ -77,7 +81,7 @@ method enter*(s: TurnScene) =
 
   # Build the crowd
   let emit = s.state.getEmit()
-  let numMen = s.rng.rand(15) + 5
+  let numMen = s.rng.rand(5) + 3
 
   s.crowd.setLen(0)
 
@@ -101,6 +105,24 @@ method enter*(s: TurnScene) =
     )
     s.crowd.add(man)
 
+  if isNone s.state.lastAction:
+    echo "Unexpected, lastAction is none, assuming aShine"
+    s.state.lastAction = some(aShine)
+
+  case get s.state.lastAction
+  of aShine:
+    s.playerX = 167 * 2
+    s.drawPlayerPos = V2(x: 123 * 2, y: 118 * 2)
+    s.drawPlayer = s.assets.litChurch
+  of aIntegrate:
+    s.playerX = 824
+    s.drawPlayerPos = V2(x: 402 * 2, y: 216 * 2)
+    s.drawPlayer = s.assets.lamp
+  of aIsolate:
+    s.playerX = 1104
+    s.drawPlayerPos = V2(x: 505 * 2, y: 176 * 2)
+    s.drawPlayer = s.assets.litHouse
+
 method update*(s: TurnScene, dt: float, ctx: Context) =
   if loadImageProgress() != 1.0:
     return
@@ -119,6 +141,8 @@ method update*(s: TurnScene, dt: float, ctx: Context) =
 
   for man in s.crowd.mitems:
     man.update(dt, s.playerX)
+
+  s.playerIntensity = 1.0
 
   if prog > 1.0:
     s.state.finishTurn()
@@ -152,6 +176,8 @@ method draw*(s: TurnScene, c: Canvas) =
   c.drawFrame(s.assets.background, 0, s.assets.background.fw.toFloat * 2.0, backY, 2.0)
 
   c.drawFrame(s.assets.middleground, 0, 0.0, 0.0, 2.0)
+
+  c.drawFrame(s.drawPlayer, 0, s.drawPlayerPos.x, s.drawPlayerPos.y, 2.0)
 
   for man in s.crowd.mitems:
     man.draw(c, s.assets, s.playerX)

@@ -1,7 +1,7 @@
 # Copyright (C) 2026 tatjam
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import std/random
+import std/[random, options]
 
 type Cause* = enum
   cMoon
@@ -62,6 +62,7 @@ type GameState* = ref object
   socialStanding*: SocialStanding = ssAssumed
   moonPhase*: MoonPhase = mpWaxing
   rng*: Rand = initRand(1234)
+  lastAction*: Option[Action] = none(Action)
 
 proc effectOnShine(state: GameState, a: Action, n: float) =
   var lose: array[Cause, float]
@@ -126,6 +127,7 @@ proc playTurn*(state: GameState, a: Action) =
   state.score += payoff[a][state.socialStanding] * n
   effectOnShine(state, a, n)
   effectOnSocialStanding(state, a, n)
+  state.lastAction = some(a)
 
 proc getEmit*(state: GameState): array[CrowdBehaviour, float] =
   return emit[state.socialStanding]

@@ -13,12 +13,17 @@ type Assets* = ref object
   crowdWalk*: array[manNames.len, Sheet]
   moon*: Sheet
 
+  litHouse*: Sheet
+  litChurch*: Sheet
+
 proc loadAssets*(): Assets =
   result = Assets(
     background: Sheet(img: loadImage("res/background.png"), fw: 384, fh: 288),
     middleground: Sheet(img: loadImage("res/middleground.png"), fw: 650, fh: 350),
     lamp: Sheet(img: loadImage("res/street-lamp.png"), fw: 35, fh: 108),
     moon: Sheet(img: loadImage("res/moon.png"), fw: 55, fh: 55),
+    litHouse: Sheet(img: loadImage("res/window_lit.png"), fw: 104, fh: 80),
+    litChurch: Sheet(img: loadImage("res/church_lit.png"), fw: 91, fh: 80),
   )
 
   for i, name in manNames:
