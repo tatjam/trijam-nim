@@ -102,7 +102,7 @@ const transitionTable: array[SocialStanding, array[SocialStanding, float]] = [
 const pushTo: array[Action, SocialStanding] =
   [aShine: ssPraised, aIntegrate: ssAssumed, aIsolate: ssForgotten]
 
-proc weightedPick[T](rng: var Rand, options: array[T, float]): T =
+proc weightedPick*[T](rng: var Rand, options: array[T, float]): T =
   var total = 0.0
   for v in options:
     total += v

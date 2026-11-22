@@ -11,6 +11,7 @@ type
   Sheet* = object
     img*: Image
     fw*, fh*: int
+    frames*: int
 
 proc newImage(): Image {.importjs: "new Image()".}
 proc `src=`(i: Image, s: cstring) {.importjs: "#.src = #".}
@@ -37,18 +38,25 @@ proc loadImageProgress*(): float =
 
   return loaded / total
 
-proc drawFrame*(c: Canvas, s: Sheet, frame: int, x, y: float, scale = 1.0) =
-  if not s.img.ready:
+proc drawFrame*(
+    c: Canvas,
+    s: Sheet,
+    frame: int,
+    x, y: float,
+    scale = 1.0,
+    flipX = false,
+    flipY = false,
+) =
+  if s.img.isNil or s.fw <= 0 or not s.img.ready:
     return
-  let cols = s.img.naturalWidth div s.fw
-  c.drawImage(
-    s.img,
-    ((frame mod cols) * s.fw).float,
-    ((frame div cols) * s.fh).float,
-    s.fw.float,
-    s.fh.float,
-    x.round,
-    y.round,
-    s.fw.float * scale,
-    s.fh.float * scale,
-  )
+  let cols = max(1, s.img.naturalWidth div s.fw)
+  let sx = ((frame mod cols) * s.fw).float
+  let sy = ((frame div cols) * s.fh).float
+  let dw = s.fw.float * scale
+  let dh = s.fh.float * scale
+
+  c.saved:
+    # move the origin to the sprite's top-left; when flipped, to the edge that becomes the left
+    c.translate(x.round + (if flipX: dw else: 0.0), y.round + (if flipY: dh else: 0.0))
+    c.scale(if flipX: -1.0 else: 1.0, if flipY: -1.0 else: 1.0)
+    c.drawImage(s.img, sx, sy, s.fw.float, s.fh.float, 0.0, 0.0, dw, dh)

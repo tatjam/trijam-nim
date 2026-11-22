@@ -3,14 +3,14 @@
 
 import framework/[sprite]
 
-const names = ["hat-man", "bearded", "woman", "oldman"]
+const manNames* = ["hat-man", "bearded", "woman"]
 
 type Assets* = ref object
   background*: Sheet
   middleground*: Sheet
   lamp*: Sheet
-  crowdIdle*: array[names.len, Sheet]
-  crowdWalk*: array[names.len, Sheet]
+  crowdIdle*: array[manNames.len, Sheet]
+  crowdWalk*: array[manNames.len, Sheet]
   moon*: Sheet
 
 proc loadAssets*(): Assets =
@@ -21,8 +21,25 @@ proc loadAssets*(): Assets =
     moon: Sheet(img: loadImage("res/moon.png"), fw: 55, fh: 55),
   )
 
-  for i, name in names:
-    result.crowdIdle[i] =
-      Sheet(img: loadImage(cstring("res/" & name & "-idle.png")), fw: 39, fh: 52)
-    result.crowdWalk[i] =
-      Sheet(img: loadImage(cstring("res/" & name & "-walk.png")), fw: 39, fh: 52)
+  for i, name in manNames:
+    if name == "woman":
+      result.crowdWalk[i] = Sheet(
+        img: loadImage(cstring("res/" & name & "-walk.png")), fw: 37, fh: 52, frames: 6
+      )
+      result.crowdIdle[i] = Sheet(
+        img: loadImage(cstring("res/" & name & "-idle.png")), fw: 37, fh: 52, frames: 7
+      )
+    elif name == "hat-man":
+      result.crowdWalk[i] = Sheet(
+        img: loadImage(cstring("res/" & name & "-walk.png")), fw: 39, fh: 52, frames: 6
+      )
+      result.crowdIdle[i] = Sheet(
+        img: loadImage(cstring("res/" & name & "-idle.png")), fw: 39, fh: 52, frames: 4
+      )
+    else:
+      result.crowdWalk[i] = Sheet(
+        img: loadImage(cstring("res/" & name & "-walk.png")), fw: 40, fh: 52, frames: 6
+      )
+      result.crowdIdle[i] = Sheet(
+        img: loadImage(cstring("res/" & name & "-idle.png")), fw: 40, fh: 52, frames: 5
+      )
