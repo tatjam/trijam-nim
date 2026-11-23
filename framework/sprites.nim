@@ -64,3 +64,16 @@ proc drawFrame*(
     c.translate(x.round + (if flipX: dw else: 0.0), y.round + (if flipY: dh else: 0.0))
     c.scale(if flipX: -1.0 else: 1.0, if flipY: -1.0 else: 1.0)
     c.drawImage(s.img, sx, sy, s.fw.float, s.fh.float, 0.0, 0.0, dw, dh)
+
+proc drawAnim*(
+    c: Canvas,
+    s: Sheet,
+    t: float,
+    x, y: float,
+    fps = 8.0,
+    scale = 1.0,
+    flipX = false,
+    flipY = false,
+) =
+  let frame = int(floorMod(t * fps, s.frames.float))
+  c.drawFrame(s, frame, x, y, scale, flipX, flipY)

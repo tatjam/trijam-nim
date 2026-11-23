@@ -58,3 +58,9 @@ proc tintLayer*(c: Canvas, color: cstring, a = 1.0) =
     c.alpha(a)
     c.fillStyle(color)
     c.fillRect(0, 0, c.width.float, c.height.float)
+
+proc fadeOverlay*(c: Canvas, t: float, color = "#000") =
+  c.fillStyle(cstring(color))
+  c.alpha(t)
+  c.fillRect(0, 0, c.width.float, c.height.float)
+  c.alpha(1.0)
