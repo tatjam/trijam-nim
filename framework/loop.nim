@@ -4,81 +4,87 @@
 # Main game loop and entry point
 
 import std/dom
-import canvases, contexts, keyboards, mice, scenes, audio, src/[init, config]
+import canvases, contexts, keyboards, mice, scenes, audio
 
-var
-  c = initCanvas("c", W, H)
-  ctx = Context()
+proc startLoop*(
+  canvasId: cstring,
+  width, height: int,
+  timestep: float,
+  blockedKeys: seq[string],
+  start: Scene,
+) =
+  var
+    c = initCanvas(canvasId, width, height)
+    ctx = Context()
+    acc, last = 0.0
 
-  # For constant timestepping
-  acc, last = 0.0
+  let cElem = document.getElementById(canvasId)
 
-let cElem = document.getElementById("c")
+  window.addEventListener(
+    "keydown",
+    proc(e: Event) =
+      let k = $KeyboardEvent(e).key
+      ctx.keys.press k
+      if k in blockedKeys:
+        e.preventDefault()
+      unlockAudio(),
+  )
+  window.addEventListener(
+    "keyup",
+    proc(e: Event) =
+      let k = $KeyboardEvent(e).key
+      ctx.keys.release k
+      if k in blockedKeys:
+        e.preventDefault()
+      unlockAudio(),
+  )
 
-window.addEventListener(
-  "keydown",
-  proc(e: Event) =
-    let k = $KeyboardEvent(e).key
-    ctx.keys.press k
-    if k in gameKeys:
+  cElem.addEventListener(
+    "mousemove",
+    proc(e: Event) =
+      let mev = MouseEvent(e)
+      ctx.mous.move(mev.offsetX, mev.offsetY)
+      e.preventDefault(),
+  )
+
+  cElem.addEventListener(
+    "mousedown",
+    proc(e: Event) =
+      ctx.mous.press MouseEvent(e).button
       e.preventDefault()
-    unlockAudio(),
-)
-window.addEventListener(
-  "keyup",
-  proc(e: Event) =
-    let k = $KeyboardEvent(e).key
-    ctx.keys.release k
-    if k in gameKeys:
-      e.preventDefault()
-    unlockAudio(),
-)
+      unlockAudio(),
+  )
 
-cElem.addEventListener(
-  "mousemove",
-  proc(e: Event) =
-    let mev = MouseEvent(e)
-    ctx.mous.move(mev.offsetX, mev.offsetY)
-    e.preventDefault(),
-)
+  cElem.addEventListener(
+    "contextmenu",
+    proc(e: Event) =
+      e.preventDefault(),
+  )
 
-cElem.addEventListener(
-  "mousedown",
-  proc(e: Event) =
-    ctx.mous.press MouseEvent(e).button
-    e.preventDefault()
-    unlockAudio(),
-)
+  cElem.addEventListener(
+    "mouseup",
+    proc(e: Event) =
+      ctx.mous.release MouseEvent(e).button
+    ,
+  )
 
-cElem.addEventListener(
-  "contextmenu",
-  proc(e: Event) =
-    e.preventDefault(),
-)
+  proc frame(ms: float) =
+    let t = ms / 1000.0
+    acc += min(t - last, 0.25)
+    last = t
+    while acc >= timestep:
+      updateScene(timestep, ctx)
+      acc -= timestep
 
-cElem.addEventListener(
-  "mouseup",
-  proc(e: Event) =
-    ctx.mous.release MouseEvent(e).button
-  ,
-)
+    ctx.keys.update
+    ctx.mous.update
 
-proc frame(ms: float) =
-  let t = ms / 1000.0
-  acc += min(t - last, 0.25)
-  last = t
-  while acc >= dt:
-    updateScene(dt, ctx)
-    acc -= dt
+    drawScene(c)
+    changeSceneIfNeeded()
 
-  ctx.keys.update
-  ctx.mous.update
+    requestFrame(frame)
 
-  drawScene(c)
+  nextScene start
   changeSceneIfNeeded()
-
-  requestFrame(frame)
-
-proc launchMainLoop*() =
-  changeSceneIfNeeded()
+  c.smoothing false
   requestFrame(frame)

@@ -33,6 +33,8 @@ proc loadImage*(path: cstring): Image =
 
 proc loadImageProgress*(): float =
   let total = pending.len
+  if total == 0:
+    return 1.0
   var loaded = 0
   for i in pending:
     if i.ready:
