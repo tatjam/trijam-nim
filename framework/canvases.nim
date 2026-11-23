@@ -1,11 +1,40 @@
 # Copyright (C) 2026 tatjam
 # SPDX-License-Identifier: GPL-3.0-or-later
-
-import std/math
+# ------------------------------------------
+# Wrappers for HTML 5 canvas with sum types
 
 type
   Canvas* {.importc.} = ref object # a 2D context (the screen or an offscreen layer)
   Gradient* {.importc.} = ref object
+
+  LineCap* = enum
+    lcButt = "butt"
+    lcRound = "round"
+    lcSquare = "square"
+
+  LineJoin* = enum
+    ljMiter = "miter"
+    ljRound = "round"
+    ljBevel = "bevel"
+
+  BlendMode* = enum
+    bmSourceOver = "source-over"
+    bmLighter = "lighter"
+    bmSourceAtop = "source-atop"
+    bmDestinationIn = "destination-in"
+    bmDestinationOut = "destination-out"
+    bmMultiply = "multiply"
+    bmScreen = "screen"
+
+  TextAlign* = enum
+    taLeft = "left"
+    taCenter = "center"
+    taRight = "right"
+
+  TextBaseline* = enum
+    tbTop = "top"
+    tbMiddle = "middle"
+    tbAlphabetic = "alphabetic"
 
 proc initCanvas*(
   id: cstring, w, h: int
@@ -32,15 +61,18 @@ proc strokeStyle*(c: Canvas, s: cstring) {.importjs: "#.strokeStyle = #".}
 proc strokeStyle*(c: Canvas, g: Gradient) {.importjs: "#.strokeStyle = #".}
 proc lineWidth*(c: Canvas, w: float) {.importjs: "#.lineWidth = #".}
 
-# butt | round | square
-proc lineCap*(c: Canvas, s: cstring) {.importjs: "#.lineCap = #".}
+proc jsLineCap(c: Canvas, s: cstring) {.importjs: "#.lineCap = #".}
+proc lineCap*(c: Canvas, cap: LineCap) =
+  c.jsLineCap(cstring($cap))
 
-# miter | round | bevel
-proc lineJoin*(c: Canvas, s: cstring) {.importjs: "#.lineJoin = #".}
+proc jsLineJoin(c: Canvas, s: cstring) {.importjs: "#.lineJoin = #".}
+proc lineJoin*(c: Canvas, join: LineJoin) =
+  c.jsLineJoin(cstring($join))
 
 proc alpha*(c: Canvas, a: float) {.importjs: "#.globalAlpha = #".}
-proc blend*(c: Canvas, mode: cstring) {.importjs: "#.globalCompositeOperation = #".}
-  # source-over (default) | lighter | source-atop | destination-in | destination-out | multiply | screen
+proc jsBlend(c: Canvas, mode: cstring) {.importjs: "#.globalCompositeOperation = #".}
+proc blend*(c: Canvas, mode: BlendMode) =
+  c.jsBlend(cstring($mode))
 
 proc smoothing*(c: Canvas, on: bool) {.importjs: "#.imageSmoothingEnabled = #".}
 proc setLineDash*(c: Canvas, d: seq[float]) {.importjs: "#.setLineDash(#)".}
@@ -95,11 +127,13 @@ proc addStop*(
 ) {.importjs: "#.addColorStop(#,#)".}
 
 proc font*(c: Canvas, f: cstring) {.importjs: "#.font = #".}
-proc textAlign*(c: Canvas, a: cstring) {.importjs: "#.textAlign = #".}
-  # left | center | right
+proc jsTextAlign(c: Canvas, a: cstring) {.importjs: "#.textAlign = #".}
+proc textAlign*(c: Canvas, a: TextAlign) =
+  c.jsTextAlign(cstring($a))
 
-proc textBaseline*(c: Canvas, b: cstring) {.importjs: "#.textBaseline = #".}
-  # top | middle | alphabetic
+proc jsTextBaseline(c: Canvas, b: cstring) {.importjs: "#.textBaseline = #".}
+proc textBaseline*(c: Canvas, b: TextBaseline) =
+  c.jsTextBaseline(cstring($b))
 
 proc fillText*(c: Canvas, s: cstring, x, y: float) {.importjs: "#.fillText(@)".}
 proc strokeText*(c: Canvas, s: cstring, x, y: float) {.importjs: "#.strokeText(@)".}
@@ -114,57 +148,3 @@ proc drawCanvas*(
 proc drawCanvas*(
   dst, src: Canvas, sx, sy, sw, sh, dx, dy, dw, dh: float
 ) {.importjs: "#.drawImage(#.canvas,@)".}
-
-template saved*(c: Canvas, body: untyped) =
-  ## Runs body between save() and restore().
-  c.save()
-  body
-  c.restore()
-
-proc clear*(c: Canvas, color: cstring) =
-  c.fillStyle(color)
-  c.fillRect(0, 0, c.width.float, c.height.float)
-
-proc line*(c: Canvas, x0, y0, x1, y1: float) =
-  c.beginPath()
-  c.moveTo(x0, y0)
-  c.lineTo(x1, y1)
-  c.stroke()
-
-proc fillCircle*(c: Canvas, x, y, r: float) =
-  c.beginPath()
-  c.arc(x, y, r, 0, TAU)
-  c.fill()
-
-proc strokeCircle*(c: Canvas, x, y, r: float) =
-  c.beginPath()
-  c.arc(x, y, r, 0, TAU)
-  c.stroke()
-
-proc polygon*(c: Canvas, pts: openArray[(float, float)], close = true) =
-  if pts.len == 0:
-    return
-  c.beginPath()
-  c.moveTo(pts[0][0], pts[0][1])
-  for i in 1 ..< pts.len:
-    c.lineTo(pts[i][0], pts[i][1])
-  if close:
-    c.closePath()
-
-proc glow*(c: Canvas, x, y, r: float, color: cstring) =
-  let g = c.radialGradient(x, y, 0, x, y, r)
-  g.addStop(0, color)
-  g.addStop(1, "rgba(0,0,0,0)")
-  c.fillStyle(g)
-  c.fillRect(x - r, y - r, r * 2, r * 2)
-
-proc lightBlob*(c: Canvas, x, y, r: float) =
-  c.glow(x, y, r, "rgba(255,255,255,1)")
-
-proc tintLayer*(c: Canvas, color: cstring, a = 1.0) =
-  c.save()
-  c.blend("source-atop")
-  c.alpha(a)
-  c.fillStyle(color)
-  c.fillRect(0, 0, c.width.float, c.height.float)
-  c.restore()

@@ -1,7 +1,7 @@
 # Copyright (C) 2026 tatjam
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import context, canvas
+import contexts, canvases
 export Context, Canvas
 
 type Scene* = ref object of RootObj

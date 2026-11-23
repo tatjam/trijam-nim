@@ -1,7 +1,9 @@
 # Copyright (C) 2026 tatjam
 # SPDX-License-Identifier: GPL-3.0-or-later
+# ------------------------------------------
+# Convenient spritesheets
 
-import canvas, std/math
+import canvases, canvas_utils, std/math
 
 type
   Image* {.importc.} = ref object

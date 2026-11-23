@@ -1,8 +1,10 @@
 # Copyright (C) 2026 tatjam
 # SPDX-License-Identifier: GPL-3.0-or-later
+# ------------------------------------------
+# Main game loop and entry point
 
 import std/dom
-import canvas, context, keyboard, mouse, scene, audio, src/[init, config]
+import canvases, contexts, keyboards, mice, scenes, audio, src/[init, config]
 
 var
   c = initCanvas("c", W, H)
@@ -77,7 +79,6 @@ proc frame(ms: float) =
 
   requestFrame(frame)
 
-nextScene init.startScene
-changeSceneIfNeeded()
-c.smoothing false
-requestFrame(frame)
+proc launchMainLoop*() =
+  changeSceneIfNeeded()
+  requestFrame(frame)

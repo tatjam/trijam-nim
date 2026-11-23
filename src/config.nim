@@ -1,7 +1,7 @@
 # Copyright (C) 2026 tatjam
 # SPDX-License-Identifier: GPL-3.0-or-later
 
-import game
+import state
 
 const
   W* = 1300
@@ -10,5 +10,3 @@ const
   Hf* = H.float
   dt* = 1.0 / 60.0
   gameKeys* = ["w", "a", "s", "d"]
-
-var startScene* = Play()
