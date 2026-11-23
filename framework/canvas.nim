@@ -1,12 +1,11 @@
+# Copyright (C) 2026 tatjam
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import std/math
 
 type
   Canvas* {.importc.} = ref object # a 2D context (the screen or an offscreen layer)
   Gradient* {.importc.} = ref object
-  Img* {.importc.} = ref object # HTML image
-    complete*: bool
-    naturalWidth*: int
-    naturalHeight*: int
 
 proc initCanvas*(
   id: cstring, w, h: int
@@ -106,14 +105,6 @@ proc fillText*(c: Canvas, s: cstring, x, y: float) {.importjs: "#.fillText(@)".}
 proc strokeText*(c: Canvas, s: cstring, x, y: float) {.importjs: "#.strokeText(@)".}
 proc textWidth*(c: Canvas, s: cstring): float {.importjs: "#.measureText(#).width".}
 
-proc newImg(): Img {.importjs: "new Image()".}
-proc `src=`(i: Img, s: cstring) {.importjs: "#.src = #".}
-
-proc drawImage*(c: Canvas, i: Img, x, y: float) {.importjs: "#.drawImage(#,@)".}
-proc drawImage*(
-  c: Canvas, i: Img, sx, sy, sw, sh, dx, dy, dw, dh: float
-) {.importjs: "#.drawImage(#,@)".}
-
 proc drawCanvas*(dst, src: Canvas) {.importjs: "#.drawImage(#.canvas,0,0)".}
 proc drawCanvas*(dst, src: Canvas, x, y: float) {.importjs: "#.drawImage(#.canvas,@)".}
 proc drawCanvas*(
@@ -123,22 +114,6 @@ proc drawCanvas*(
 proc drawCanvas*(
   dst, src: Canvas, sx, sy, sw, sh, dx, dy, dw, dh: float
 ) {.importjs: "#.drawImage(#.canvas,@)".}
-
-var pendingImgs: seq[Img]
-
-func ready*(i: Img): bool =
-  i.complete and i.naturalWidth > 0
-
-proc loadImg*(path: cstring): Img =
-  result = newImg()
-  result.src = path
-  pendingImgs.add result
-
-proc allLoaded*(): bool =
-  for i in pendingImgs:
-    if not i.ready:
-      return false
-  true
 
 template saved*(c: Canvas, body: untyped) =
   ## Runs body between save() and restore().
@@ -175,22 +150,6 @@ proc polygon*(c: Canvas, pts: openArray[(float, float)], close = true) =
     c.lineTo(pts[i][0], pts[i][1])
   if close:
     c.closePath()
-
-proc drawFrame*(c: Canvas, i: Img, fw, fh, frame: int, x, y: float, scale = 1.0) =
-  if not i.ready:
-    return
-  let cols = max(1, i.naturalWidth div fw)
-  c.drawImage(
-    i,
-    ((frame mod cols) * fw).float,
-    ((frame div cols) * fh).float,
-    fw.float,
-    fh.float,
-    round(x),
-    round(y),
-    fw.float * scale,
-    fh.float * scale,
-  )
 
 proc glow*(c: Canvas, x, y, r: float, color: cstring) =
   let g = c.radialGradient(x, y, 0, x, y, r)

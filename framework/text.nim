@@ -9,12 +9,12 @@ type Align* = enum
   aCenter = "center"
   aRight = "right"
 
-proc font*(c: Ctx, f: cstring) {.importjs: "#.font = #".}
-proc textAlign*(c: Ctx, a: cstring) {.importjs: "#.textAlign = #".}
-proc textBaseline*(c: Ctx, b: cstring) {.importjs: "#.textBaseline = #".}
+proc font*(c: Canvas, f: cstring) {.importjs: "#.font = #".}
+proc textAlign*(c: Canvas, a: cstring) {.importjs: "#.textAlign = #".}
+proc textBaseline*(c: Canvas, b: cstring) {.importjs: "#.textBaseline = #".}
 
 proc drawText*(
-    ctx: Ctx,
+    ctx: Canvas,
     s: string,
     x, y: float,
     align = aCenter,
