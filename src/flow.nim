@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 import framework/scenes
+import state
 
 type
   SceneId* = enum
-    sidLoad, sidHello
+    sidAction, sidTurn, sidEnding
 
   SceneData* = object
     kind*: SceneId
@@ -17,3 +18,5 @@ proc register*(id: SceneId, make: proc(data: SceneData): Scene) =
 
 proc goToScene*(id: SceneId) =
   nextScene(factories[id](SceneData(kind: id)))
+
+let gameState* = GameState()
