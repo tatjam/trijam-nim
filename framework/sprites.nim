@@ -68,12 +68,12 @@ proc drawFrame*(
 proc drawAnim*(
     c: Canvas,
     s: Sheet,
-    t: float,
+    time: float,
     x, y: float,
     fps = 8.0,
     scale = 1.0,
     flipX = false,
     flipY = false,
 ) =
-  let frame = int(floorMod(t * fps, s.frames.float))
+  let frame = int(floorMod(time * fps, s.frames.float))
   c.drawFrame(s, frame, x, y, scale, flipX, flipY)

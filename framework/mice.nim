@@ -3,9 +3,7 @@
 # ------------------------------------------
 # Utils for handling the mouse
 
-import std/[sets], vecs
-
-export sets
+import vecs
 
 type Button* = enum
   bLeft
