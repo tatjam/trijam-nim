@@ -51,5 +51,9 @@ proc draw*(b: GuiBar, c: Canvas, style: GuiStyle) =
   c.strokeRect(b.x, b.y, b.w, b.h)
   c.drawText(
     $(int(b.fraction * 100.0 + 0.5)) & "%",
-    b.x + b.w + 24, b.y + b.h / 2, aLeft, style.text, style.textSize - 4
+    b.x + b.w + 24,
+    b.y + b.h / 2,
+    aLeft,
+    style.text,
+    style.textSize - 4,
   )

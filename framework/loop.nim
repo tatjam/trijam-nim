@@ -7,11 +7,11 @@ import std/dom
 import canvases, contexts, keyboards, mice, scenes, audio
 
 proc startLoop*(
-  canvasId: cstring,
-  width, height: int,
-  timestep: float,
-  blockedKeys: seq[string],
-  start: Scene,
+    canvasId: cstring,
+    width, height: int,
+    timestep: float,
+    blockedKeys: seq[string],
+    start: Scene,
 ) =
   var
     c = initCanvas(canvasId, width, height)

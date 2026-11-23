@@ -7,7 +7,8 @@ import flow
 
 type LoadScene* = ref object of Scene
 
-proc newLoadScene*(data: SceneData): Scene = LoadScene()
+proc newLoadScene*(data: SceneData): Scene =
+  LoadScene()
 
 method update*(s: LoadScene, dt: float, ctx: Context) =
   if loadImageProgress() >= 1.0:

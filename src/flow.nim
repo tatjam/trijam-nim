@@ -5,7 +5,8 @@ import framework/scenes
 
 type
   SceneId* = enum
-    sidLoad, sidHello
+    sidLoad
+    sidHello
 
   SceneData* = object
     kind*: SceneId

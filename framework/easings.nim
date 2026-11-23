@@ -33,8 +33,10 @@ func easeOutQuad*(t: float): float =
 
 func easeInOutQuad*(t: float): float =
   let x = clamp01(t)
-  if x < 0.5: 2.0 * x * x
-  else: 1.0 - pow(-2.0 * x + 2.0, 2.0) / 2.0
+  if x < 0.5:
+    2.0 * x * x
+  else:
+    1.0 - pow(-2.0 * x + 2.0, 2.0) / 2.0
 
 func easeOutCubic*(t: float): float =
   let x = clamp01(t)
@@ -42,8 +44,10 @@ func easeOutCubic*(t: float): float =
 
 func easeInOutCubic*(t: float): float =
   let x = clamp01(t)
-  if x < 0.5: 4.0 * x * x * x
-  else: 1.0 - pow(-2.0 * x + 2.0, 3.0) / 2.0
+  if x < 0.5:
+    4.0 * x * x * x
+  else:
+    1.0 - pow(-2.0 * x + 2.0, 3.0) / 2.0
 
 func easeOutBack*(t: float): float =
   let x = clamp01(t)
